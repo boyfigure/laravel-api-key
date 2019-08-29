@@ -24,6 +24,7 @@ class ApiKey extends Model
 
     public function __construct()
     {
+        parent::__construct();
         self::$cache_tag = config('apiquard.cache.tag');
     }
 
