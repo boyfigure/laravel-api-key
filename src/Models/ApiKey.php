@@ -4,19 +4,28 @@ namespace Ejarnutowski\LaravelApiKey\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
 
 class ApiKey extends Model
 {
     use SoftDeletes;
 
-    const EVENT_NAME_CREATED     = 'created';
-    const EVENT_NAME_ACTIVATED   = 'activated';
+    const EVENT_NAME_CREATED = 'created';
+    const EVENT_NAME_ACTIVATED = 'activated';
     const EVENT_NAME_DEACTIVATED = 'deactivated';
-    const EVENT_NAME_DELETED     = 'deleted';
+    const EVENT_NAME_DELETED = 'deleted';
 
-    protected static $nameRegex = '/^[a-z0-9-]{1,255}$/';
+    protected static $nameRegex = '/^[A-Za-z0-9_-]{1,255}$/';
 
     protected $table = 'api_keys';
+
+    public static $cache_tag;
+
+    public function __construct()
+    {
+        self::$cache_tag = config('apiquard.cache.tag');
+    }
 
     /**
      * Get the related ApiKeyAccessEvents records
@@ -45,11 +54,11 @@ class ApiKey extends Model
     {
         parent::boot();
 
-        static::created(function(ApiKey $apiKey) {
+        static::created(function (ApiKey $apiKey) {
             self::logApiKeyAdminEvent($apiKey, self::EVENT_NAME_CREATED);
         });
 
-        static::updated(function($apiKey) {
+        static::updated(function ($apiKey) {
 
             $changed = $apiKey->getDirty();
 
@@ -60,11 +69,13 @@ class ApiKey extends Model
             if (isset($changed) && $changed['active'] === 0) {
                 self::logApiKeyAdminEvent($apiKey, self::EVENT_NAME_DEACTIVATED);
             }
-
+            Cache::tags(self::$cache_tag)->flush();
         });
 
-        static::deleted(function($apiKey) {
+        static::deleted(function ($apiKey) {
             self::logApiKeyAdminEvent($apiKey, self::EVENT_NAME_DELETED);
+
+            Cache::tags(self::$cache_tag)->flush();
         });
     }
 
@@ -76,7 +87,7 @@ class ApiKey extends Model
     public static function generate()
     {
         do {
-            $key = str_random(64);
+            $key = Str::random(64);
         } while (self::keyExists($key));
 
         return $key;
@@ -90,10 +101,13 @@ class ApiKey extends Model
      */
     public static function getByKey($key)
     {
-        return self::where([
-            'key'    => $key,
-            'active' => 1
-        ])->first();
+        $cache_key = self::$cache_tag . '_' . $key;
+        return Cache::tags(self::$cache_tag)->rememberForever($cache_key, function () use ($key) {
+            return self::where([
+                'key' => $key,
+                'active' => 1
+            ])->first();
+        });
     }
 
     /**
@@ -115,7 +129,7 @@ class ApiKey extends Model
      */
     public static function isValidName($name)
     {
-        return (bool) preg_match(self::$nameRegex, $name);
+        return (bool)preg_match(self::$nameRegex, $name);
     }
 
     /**
@@ -152,10 +166,10 @@ class ApiKey extends Model
      */
     protected static function logApiKeyAdminEvent(ApiKey $apiKey, $eventName)
     {
-        $event             = new ApiKeyAdminEvent;
+        $event = new ApiKeyAdminEvent;
         $event->api_key_id = $apiKey->id;
         $event->ip_address = request()->ip();
-        $event->event      = $eventName;
+        $event->event = $eventName;
         $event->save();
     }
 }

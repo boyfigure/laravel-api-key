@@ -9,7 +9,14 @@ use Illuminate\Http\Request;
 
 class AuthorizeApiKey
 {
-    const AUTH_HEADER = 'X-Authorization';
+    protected $header_key;
+    protected $is_log_access_event;
+
+    public function __construct()
+    {
+        $this->header_key = config('apiquard.api_key.name');
+        $this->is_log_access_event = config('apiquard.is_log_access_event');
+    }
 
     /**
      * Handle the incoming request
@@ -20,33 +27,32 @@ class AuthorizeApiKey
      */
     public function handle(Request $request, Closure $next)
     {
-        $header = $request->header(self::AUTH_HEADER);
+        $header = $request->header($this->header_key);
         $apiKey = ApiKey::getByKey($header);
 
         if ($apiKey instanceof ApiKey) {
-            $this->logAccessEvent($request, $apiKey);
+            if ($this->is_log_access_event) {
+                $this->logAccessEvent($request, $apiKey);
+            }
             return $next($request);
         }
-
-        return response([
-            'errors' => [[
-                'message' => 'Unauthorized'
-            ]]
-        ], 401);
+        return response()->json(['success' => false, 'data' => [
+            'message' => 'Unauthorized'
+        ]], 401, array(), JSON_PRETTY_PRINT);
     }
 
     /**
      * Log an API key access event
      *
      * @param Request $request
-     * @param ApiKey  $apiKey
+     * @param ApiKey $apiKey
      */
     protected function logAccessEvent(Request $request, ApiKey $apiKey)
     {
         $event = new ApiKeyAccessEvent;
         $event->api_key_id = $apiKey->id;
         $event->ip_address = $request->ip();
-        $event->url        = $request->fullUrl();
+        $event->url = $request->fullUrl();
         $event->save();
     }
 }
