@@ -14,7 +14,6 @@ class AuthorizeApiKey
 
     public function __construct()
     {
-        parent::__construct();
         $this->header_key = config('apiquard.api_key.name');
         $this->is_log_access_event = config('apiquard.is_log_access_event');
     }
