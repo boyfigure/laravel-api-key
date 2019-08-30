@@ -30,7 +30,7 @@ class AuthorizeApiKey
         $header = $request->header($this->header_key);
         $apiKey = ApiKey::getByKey($header);
 
-        if (isset($apiKey->key)) {
+        if (isset($apiKey)) {
             if ($this->enable_log_access_event) {
                 $this->logAccessEvent($request, $apiKey);
             }
