@@ -21,11 +21,15 @@ class ApiKey extends Model
     protected $table = 'api_keys';
 
     public static $cache_tag;
+    public static $cache_active;
+
 
     public function __construct()
     {
         parent::__construct();
         self::$cache_tag = config('apiquard.cache.tag');
+        self::$cache_active = config('apiquard.cache.active');
+
     }
 
     /**
@@ -105,13 +109,22 @@ class ApiKey extends Model
      */
     public static function getByKey($key)
     {
-        $cache_key = self::$cache_tag . '_' . $key;
-        return Cache::tags(self::$cache_tag)->rememberForever($cache_key, function () use ($key) {
+        if (self::$cache_active) {
+            $cache_key = self::$cache_tag . '_' . $key;
+            return Cache::tags(self::$cache_tag)->rememberForever($cache_key, function () use ($key) {
+                return self::where([
+                    'key' => $key,
+                    'active' => 1
+                ])->first();
+            });
+        } else {
+            dd('aadsfdsf');
             return self::where([
                 'key' => $key,
                 'active' => 1
             ])->first();
-        });
+        }
+
     }
 
     /**
