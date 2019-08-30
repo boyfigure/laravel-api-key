@@ -118,7 +118,6 @@ class ApiKey extends Model
                 ])->first();
             });
         } else {
-            dd('aadsfdsf');
             return self::where([
                 'key' => $key,
                 'active' => 1
