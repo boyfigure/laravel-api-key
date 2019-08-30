@@ -22,7 +22,6 @@ class CreateApiKeyAdminEventsTable extends Migration
 
             $table->index('ip_address');
             $table->index('event');
-            $table->foreign('api_key_id')->references('id')->on('api_keys');
         });
     }
 
