@@ -70,13 +70,16 @@ class ApiKey extends Model
             if (isset($changed) && $changed['active'] === 0) {
                 self::logApiKeyAdminEvent($apiKey, self::EVENT_NAME_DEACTIVATED);
             }
-            Cache::tags(self::$cache_tag)->flush();
+            //redis cache error flush tags
+            // Cache::tags(self::$cache_tag)->flush();
+            Cache::flush();
         });
 
         static::deleted(function ($apiKey) {
             self::logApiKeyAdminEvent($apiKey, self::EVENT_NAME_DELETED);
-
-            Cache::tags(self::$cache_tag)->flush();
+            //redis cache error flush tags
+            // Cache::tags(self::$cache_tag)->flush();
+            Cache::flush();
         });
     }
 
