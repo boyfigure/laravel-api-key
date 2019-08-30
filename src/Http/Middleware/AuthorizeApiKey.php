@@ -10,12 +10,12 @@ use Illuminate\Http\Request;
 class AuthorizeApiKey
 {
     protected $header_key;
-    protected $is_log_access_event;
+    protected $enable_log_access_event;
 
     public function __construct()
     {
         $this->header_key = config('apiquard.api_key.name');
-        $this->is_log_access_event = config('apiquard.is_log_access_event');
+        $this->enable_log_access_event = config('apiquard.enable_log_access_event');
     }
 
     /**
@@ -30,8 +30,8 @@ class AuthorizeApiKey
         $header = $request->header($this->header_key);
         $apiKey = ApiKey::getByKey($header);
 
-        if ($apiKey instanceof ApiKey) {
-            if ($this->is_log_access_event) {
+        if (isset($apiKey->key)) {
+            if ($this->enable_log_access_event) {
                 $this->logAccessEvent($request, $apiKey);
             }
             return $next($request);
