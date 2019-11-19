@@ -111,7 +111,7 @@ class ApiKey extends Model
     {
         if (self::$cache_active) {
             $cache_key = self::$cache_tag . '_' . $key;
-            return Cache::tags(self::$cache_tag)->rememberForever($cache_key, function () use ($key) {
+            return Cache::tags(self::$cache_tag)->remember($cache_key, 60, function () use ($key) {
                 return self::where([
                     'key' => $key,
                     'active' => 1
