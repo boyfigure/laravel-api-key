@@ -58,7 +58,7 @@ class LogRequestService
                 'ip' => $this->ip,
                 'request' => $this->request,
                 'response' => $response,
-                'date' => Carbon::now()
+                'date' => Carbon::now()->toDateTimeString()
             ];
             $redis_connect = config('apiquard.cache.redis_db');
             $client = Redis::connection($redis_connect);
