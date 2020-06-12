@@ -7,5 +7,6 @@ return [
     'cache' => [
         'tag' => env("API_KEY_CACHE_TAG", 'x_api_key'),
         'active' => env("API_KEY_CACHE_ACTIVE", false),
+        'redis_db'=> env("REDIS_LOG_ACCESS_DB", 'user_log_access')
     ]
 ];
